@@ -1,0 +1,9 @@
+{
+  "name": "lamina-anatomy-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Anatomy & Physiology chapters 3–5 practice studio",
+  "scripts": {"test": "node --test tests/*.test.js", "start": "node server.js"},
+  "engines": {"node": ">=20"}
+}
