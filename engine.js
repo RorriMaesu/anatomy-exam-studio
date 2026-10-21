@@ -37,7 +37,7 @@ export function selectQuestions(bank,config,stats={},rng=random) {
     const seen=new Set();const unique=micros.filter(q=>!seen.has(q.image)&&seen.add(q.image));
     chosen.push(...unique.slice(0,3),...shuffle(pool.filter(q=>q.subtype==='diagram'),rng).slice(0,3),...shuffle(pool.filter(q=>q.type==='tf'),rng).slice(0,6),...shuffle(pool.filter(q=>q.type==='short'),rng).slice(0,2));
     // Preserve the first-exam sections while randomizing every question within them.
-    return chosen;
+    return [...shuffle(chosen.slice(0,30),rng),...chosen.slice(30)];
   }
   const seenImages=new Set();
   pool=weighted(pool).filter(q=>q.type!=='image'||!seenImages.has(q.image)&&seenImages.add(q.image));
@@ -74,6 +74,15 @@ export function topicSummary(bank,topics,stats) {
   });
 }
 export function emptyState(){return {version:1,stats:{},notes:[],history:[],lastPositions:{},session:null,settings:{endpoint:'http://localhost:11434',model:'',reducedMotion:false}};}
+export function retrieveContext(bank,prompt,limit=4){
+  const stop=new Set('the this that these those with from into then than there about would could should please one sentence two sentences compare between difference different explain help walk through does mean using give example both and for are how why can its you your what which tell just'.split(' '));
+  const terms=[...new Set((prompt.toLowerCase().match(/[a-z]{2,}/g)||[]).filter(t=>!stop.has(t)&&(t.length>=3||['er','tf'].includes(t))).map(t=>t.length>4&&t.endsWith('s')&&!/(sis|ss|us)$/.test(t)?t.slice(0,-1):t))];
+  const candidates=bank.filter(q=>q.type==='mc').map(q=>({q,text:(q.stem+' '+q.choices.find(c=>c.id===q.answer).text+' '+q.explanation).toLowerCase()}));
+  const weights=Object.fromEntries(terms.map(t=>[t,Math.log(1+candidates.length/(1+candidates.filter(c=>c.text.includes(t)).length))]));
+  const scored=candidates.map(c=>({...c,score:terms.reduce((n,t)=>n+(c.text.includes(t)?weights[t]:0),0)})).filter(c=>c.score>0).sort((a,b)=>b.score-a.score);
+  if(!scored.length)return [];
+  return scored.filter(c=>c.score>=scored[0].score*.65).slice(0,limit).map(c=>c.q);
+}
 export function validateBackup(input,byId){
   if(!input||input.version!==1||!Array.isArray(input.notes)||!Array.isArray(input.history)||typeof input.stats!=='object'||input.stats===null)throw new Error('This is not a Lamina backup.');
   if(input.notes.length>1000||input.history.length>500||Object.keys(input.stats).length>10000)throw new Error('This backup is too large.');

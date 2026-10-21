@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,access} from 'node:fs/promises';
-import {shuffle,presentQuestion,selectQuestions,recordAttempt,scoreSession,topicSummary,weakQuestion,emptyState,validateBackup} from '../engine.js';
+import {shuffle,presentQuestion,selectQuestions,recordAttempt,scoreSession,topicSummary,weakQuestion,emptyState,validateBackup,retrieveContext} from '../engine.js';
 import {localEndpoint,listModels,streamChat} from '../ollama.js';
 const data=JSON.parse(await readFile(new URL('../data/bank.json',import.meta.url),'utf8'));
 const bank=data.questions,byId=Object.fromEntries(bank.map(q=>[q.id,q]));
@@ -89,4 +89,15 @@ test('critical sequence, stop, mesenchymal and burn concepts retain checked answ
  assert.equal(answer(find('What recognizes a stop codon')),'A release factor');
  assert.equal(answer(find('several replacement connective-tissue lineages')),'Mesenchymal stem cell');
  assert.equal(answer(find('anterior trunk plus one whole leg plus')),'40.5%');
+});
+test('tutor retrieval includes correct-choice text and filters unrelated weak matches',()=>{
+ const relevant=retrieveContext(bank,'Explain facilitated diffusion in one sentence.');
+ assert.ok(relevant.length>0);assert.ok(relevant.every(q=>q.topic==='transport'));
+ assert.ok(relevant.some(q=>q.choices.find(c=>c.id===q.answer).text==='Facilitated diffusion'));
+ const cells=retrieveContext(bank,'Compare mesenchymal cells, fibroblasts, and fibrocytes.');assert.ok(cells.some(q=>q.stem.includes('three cell roles')));
+ const rna=retrieveContext(bank,'What are the RNA roles in protein synthesis?');assert.ok(rna.some(q=>q.topic==='synthesis'));
+ assert.deepEqual(retrieveContext(bank,'Please help.'),[]);
+});
+test('mock MC chapter order is interleaved rather than fixed blocks',()=>{
+ const exam=selectQuestions(bank,{mode:'exam',chapters:[3,4,5]},{},rng(42));assert.ok(new Set(exam.slice(0,10).map(q=>q.chapter)).size>1);
 });
