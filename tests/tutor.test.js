@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {TUTOR_MODES,questionSection,selectedAnswer,retrieveReadings,makeTutorRequest,citationAudit,renderTutorText,lectureMarkdown} from '../tutor.js';
+import {TUTOR_MODES,SEQUENCE_REFERENCE,questionSection,selectedAnswer,retrieveReadings,makeTutorRequest,citationAudit,renderTutorText,lectureMarkdown} from '../tutor.js';
 import {streamChat,modelControls} from '../ollama.js';
 import {emptyState,validateBackup} from '../engine.js';
 const book=JSON.parse(await readFile(new URL('../data/textbook.json',import.meta.url),'utf8'));
@@ -70,4 +70,11 @@ test('model thinking controls follow actual metadata and older installations can
 test('supported direct-answer controls are passed separately from generation options',async()=>{
  let payload;const fetcher=async(url,options)=>{payload=JSON.parse(options.body);return {ok:true,body:new ReadableStream({start(c){c.enqueue(new TextEncoder().encode('{"message":{"content":"A hint."},"done":true}\n'));c.close();}})};};
  await streamChat({endpoint:'http://localhost:11434',model:'test',messages:[],think:false,onToken:()=>{}},fetcher);assert.equal(payload.think,false);assert.equal(payload.options.think,undefined);
+});
+test('the fixed reference is complementary, antiparallel, and included in synthesis lessons',()=>{
+ const bases=s=>s.replace(/[35′\-\s]/g,'');
+ const template=bases(SEQUENCE_REFERENCE.template),coding=bases(SEQUENCE_REFERENCE.coding),mrna=bases(SEQUENCE_REFERENCE.mrna),anticodons=bases(SEQUENCE_REFERENCE.anticodons);
+ assert.equal(template,'TACCACCCT');assert.equal(mrna,'AUGGUGGGA');assert.equal(coding.replaceAll('T','U'),mrna);
+ assert.equal([...template].map(c=>({A:'U',T:'A',C:'G',G:'C'}[c])).join(''),mrna);assert.equal([...anticodons].map(c=>({A:'U',U:'A',C:'G',G:'C'}[c])).join(''),mrna);assert.ok(!template.includes('U')&&!coding.includes('U'));assert.ok(!mrna.includes('T')&&!anticodons.includes('T'));
+ const system=makeTutorRequest({book,prompt:'Teach me protein synthesis.',section:'3.4',mode:'lecture'}).messages[0].content;assert.ok(system.includes(SEQUENCE_REFERENCE.template));assert.ok(system.includes(SEQUENCE_REFERENCE.anticodons));assert.match(system,/use this exact checked example/);
 });

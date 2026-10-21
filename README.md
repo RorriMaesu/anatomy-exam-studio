@@ -19,6 +19,7 @@ A responsive study app for Anatomy & Physiology I, chapters 3–5.
 - Wrong-answer coaching receives the actual selected response, confidence, and checked key. It can compare the mistaken choice with the mechanism behind the correct one.
 - 224 labeled textbook excerpts across all 16 sections in chapters 3–5. Citation buttons open the exact supplied excerpt, printed page, PDF page, and full online section. Printing errors and editorial corrections are visible alongside the original wording.
 - A lecture reader, cited-note downloads, and one-click saving of lessons to the mistake notebook.
+- A fixed, checked DNA/RNA reference beside synthesis lessons. The tutor receives the same complementary, antiparallel example rather than inventing sequence examples for a lecture.
 - A saved unfinished round survives reload, preserving its choice order and exam deadline.
 - Responsive layouts, keyboard answer shortcuts, focus styles, descriptive micrograph alternatives, and reduced-motion support.
 
