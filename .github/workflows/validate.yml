@@ -13,4 +13,5 @@ jobs:
         with:
           node-version: '22'
       - run: node --check app.js
-      - run: node --test tests/engine.test.js
+      - run: node --check tutor.js
+      - run: node --test tests/*.test.js
